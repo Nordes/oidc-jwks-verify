@@ -27,9 +27,8 @@ const jwtVerify = async (token: string, publicKey: any): Promise<VerifyStatusCod
 }
 
 export class OidcValidator {
-  issuer: string
-  OIDC_DISCOVERY_URI: string
-  publicKey: string
+  private _OidcDiscoveryUri: string
+  private _publicKey: string
 
   constructor(options: VerifyOptions) {
     if (!options) {
@@ -40,14 +39,17 @@ export class OidcValidator {
       throw new Error('Issuer option is missing.')
     }
 
-    this.issuer = options.issuer
-    this.OIDC_DISCOVERY_URI = urlJoin(options.issuer, OIDC_DISCOVERY_PATH)
+    this._OidcDiscoveryUri = urlJoin(options.issuer, OIDC_DISCOVERY_PATH)
+  }
+
+  get OidcDiscoveryUri(): string {
+    return this._OidcDiscoveryUri;
   }
 
   public async verify(token: string): Promise<VerifyStatusCode> {
-    if (!this.publicKey) {
+    if (!this._publicKey) {
 
-      let thatPublicKey: string = this.publicKey
+      let thatPublicKey: string = this._publicKey
       let result = await (this.FetchDiscoveryJwkUris()
         .then((jwksUri: string) => this.FetchJwkFirstX5C(jwksUri))
         .then((x5c: any) => this.SaveCertificate(x5c, token))
@@ -59,12 +61,12 @@ export class OidcValidator {
           return jwtVerify(token, thatPublicKey)
         }))
 
-      this.publicKey = thatPublicKey
+      this._publicKey = thatPublicKey
 
       return result
     } else {
       // No pfx validation
-      return jwtVerify(token, this.publicKey)
+      return jwtVerify(token, this._publicKey)
     }
   }
 
@@ -90,7 +92,7 @@ export class OidcValidator {
   
   private FetchDiscoveryJwkUris (){
     return new Promise<string>((resolve, reject) => {
-      request.get(this.OIDC_DISCOVERY_URI, (err: any, discoveryResponse: any) => {
+      request.get(this._OidcDiscoveryUri, (err: any, discoveryResponse: any) => {
         if (err) {
           return reject(err)
         }
@@ -112,6 +114,11 @@ export class OidcValidator {
     })
   }
 
+  /**
+   * Save the certificate and then validate the token against the certificate.
+   * @param x5c Certificate
+   * @param token OIDC Token
+   */
   private SaveCertificate(x5c: any, token: string) {
     var that = this
     return new Promise<VerifyStatusCode>((resolve, reject) => {
@@ -127,9 +134,9 @@ export class OidcValidator {
         e: parseInt(parsedKey.publicKey.e, 10)
       }, 'components-public')
 
-      that.publicKey = key.exportKey('public')
+      that._publicKey = key.exportKey('public')
 
-      resolve(jwtVerify(token, that.publicKey))
+      resolve(jwtVerify(token, that._publicKey))
     })
   }
 }
