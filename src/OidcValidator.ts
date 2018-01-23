@@ -9,7 +9,7 @@ import jwt = require("jsonwebtoken");
 import NodeRSA = require("node-rsa");
 import * as path from "path";
 import request = require("request");
-import urlJoin = require("url-join");
+import urlJoin = require("url-join"); // Should be removed. IMO, it's not worth havig that dependency
 import { ValidatorResult, VerifyOptions, VerifyStatusCode } from "./Model";
 import { OidcValidatorErrorMessage } from "./OidcValidatorErrorMessage";
 // tslint:disable-next-line:no-var-requires
@@ -64,12 +64,11 @@ export class OidcValidator {
         .then((jwksUri: string) => this.FetchJwkFirstX5C(jwksUri))
         .then((x5c: any) => this.SaveCertificateAndCheck(x5c, token))
         .catch(async (err: any): Promise<any> => {
+          // hack in order to force the check of the jwt when no x5c certificate. In fact it should be done differently.
           if (err) {
             return new ValidatorResult(VerifyStatusCode.Error, err);
           }
-
-          return this.jwtVerify(token, thatPublicKey);
-        }));
+         }));
 
       this.publicKey = thatPublicKey;
 
@@ -88,7 +87,7 @@ export class OidcValidator {
   private async jwtVerify(token: string, publicKey: NodeRSA.Key): Promise<ValidatorResult> {
     return new Promise<ValidatorResult>((resolve, reject) => {
       // format: 'PKCS8', <== the format does not exists
-      jwt.verify(token, publicKey.toString(), { algorithms: ["RS256"] }, (errVerify: any) => {
+      jwt.verify(token, publicKey ? publicKey.toString() : "", { algorithms: ["RS256"] }, (errVerify: any) => {
         if (errVerify) {
           return resolve(new ValidatorResult(VerifyStatusCode.Unauthorized));
         }
@@ -145,16 +144,18 @@ export class OidcValidator {
         if (error) {
           return reject(error);
         } else if (!jwksResponse || jwksResponse.statusCode !== 200) {
-          // throw new Error("Something went wrong in order to get the JWK x509 Certificate.");
+          // TODO export the string in the enum
           return reject("Something went wrong in order to get the JWK x509 Certificate.");
         }
         try {
           const bodyObj = JSON.parse(body);
 
           if (!bodyObj || !bodyObj.keys
-              || bodyObj.keys.length === 0
-              || !body.keys[0].x5c || body.keys[0].x5c.length === 0) {
+              || bodyObj.keys.length === 0) {
+            // No key set on the server will generate the case of x5c not existing. Should we continue in the flow?
             return reject("Something went wrong. We are not able to find any x509 certificate from the response.");
+          } else if (!bodyObj.keys[0].x5c || bodyObj.keys[0].x5c.length === 0) {
+            return resolve(undefined);
           }
 
           return resolve(body.keys[0].x5c[0]); // Todo: We should instead return a list of x5c
@@ -172,6 +173,9 @@ export class OidcValidator {
    */
   private SaveCertificateAndCheck(x5c: string, token: string): Promise<ValidatorResult> {
     const that = this;
+    if (!x5c) {
+      return this.jwtVerify(token, that.publicKey);
+    }
 
     return new Promise<ValidatorResult>((resolve, reject) => {
       const x5cFormatted: string = that.formatCertificate(x5c);
@@ -190,7 +194,7 @@ export class OidcValidator {
 
       that.publicKey = key.exportKey("public");
 
-      resolve(this.jwtVerify(token, that.publicKey));
+      return resolve(this.jwtVerify(token, that.publicKey));
     });
   }
 }

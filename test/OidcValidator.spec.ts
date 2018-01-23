@@ -1,12 +1,13 @@
-import { OidcValidator } from '../src/OidcValidator'
-import { OidcValidatorErrorMessage } from '../src/OidcValidatorErrorMessage'
+import { OidcValidator } from '../src/OidcValidator';
+import { OidcValidatorErrorMessage } from '../src/OidcValidatorErrorMessage';
 import { expect, should as shouldbe } from 'chai';
-import nock = require ('nock')
-import fs = require('fs')
+import nock = require('nock');
+import fs = require('fs');
 import { VerifyStatusCode } from '../src/Model/index';
 
-var fakeWellKnown = fs.readFileSync(__dirname + `/mockRequest/wellKnown.json`, null)
-var fakeJwks = fs.readFileSync(__dirname + `/mockRequest/jwks.json`, null)
+const fakeWellKnown = fs.readFileSync(__dirname + `/mockRequest/wellKnown.json`, null);
+const fakeJwks = fs.readFileSync(__dirname + `/mockRequest/jwks.json`, null);
+let scope: nock.Scope;
 
 describe("OidcValidator", () => {
   describe("#constructor()", () => {
@@ -16,35 +17,35 @@ describe("OidcValidator", () => {
         expect(oidcValidator).to.be.not.null;
       });
     })
-  
+
     context("Instantiate constructor with a valid [http] issuer", () => {
       it("Should not fail", () => {
         let oidcValidator = new OidcValidator({ issuer: "http://openid.example.com" });
         expect(oidcValidator).to.be.not.null;
       });
     })
-  
+
     context("Instantiate constructor with a valid [://] issuer", () => {
       it("Should not fail", () => {
         const oidcValidator = new OidcValidator({ issuer: "://openid.example.com" });
         expect(oidcValidator).to.be.not.null;
       });
     })
-  
+
     context("Instantiate constructor having an invalid issuer URI", () => {
       it("Should throw when no http or https prefix", () => {
         const should = shouldbe();
         should.throw(() => { let oidcValidator = new OidcValidator({ issuer: "openid.example.com" }); }, OidcValidatorErrorMessage.IssuerPrefixInvalid, "Expecting the Constructor to throw an Error with missing URI prefix");
       });
     })
-  
+
     context("Get the Discovery URI with no trailing slash", () => {
       it("Should return the well known URI without any extra slashes", () => {
         const oidcValidator = new OidcValidator({ issuer: "https://openid.example.com" });
         expect(oidcValidator.OidcDiscoveryUri).to.equal("https://openid.example.com/.well-known/openid-configuration");
       });
     })
-  
+
     context("Get the Discovery URI with a trailing slash", () => {
       it("Should return the well known URI without any extra slashes", () => {
         const oidcValidator = new OidcValidator({ issuer: "https://openid.example.com/" });
@@ -55,30 +56,29 @@ describe("OidcValidator", () => {
     context("Undefined issuer", () => {
       it("Should fail with an error: Issuer option is missing.", () => {
         const should = shouldbe();
-        should.throw(() => { 
-          let oidcValidator = new OidcValidator({ issuer: undefined }); 
-        }, 
-        OidcValidatorErrorMessage.IssuerMissing, 
-        "Expecting the Constructor to throw an Error with issuer option is missing.");
+        should.throw(() => {
+          let oidcValidator = new OidcValidator({ issuer: undefined });
+        },
+          OidcValidatorErrorMessage.IssuerMissing,
+          "Expecting the Constructor to throw an Error with issuer option is missing.");
       });
     })
 
     context("Undefined options", () => {
       it("Should fail with an error: Options are missing.", () => {
         const should = shouldbe();
-        should.throw(() => { 
+        should.throw(() => {
           let oidcValidator = new OidcValidator(undefined);
           console.log(oidcValidator.OidcDiscoveryUri);
-        }, 
-        OidcValidatorErrorMessage.OptionsMissing, 
-        "Expecting the Constructor to throw an Error with options are missing.");
+        },
+          OidcValidatorErrorMessage.OptionsMissing,
+          "Expecting the Constructor to throw an Error with options are missing.");
       });
     })
   })
 
   describe("#verify()", () => {
     let oidcValidator: OidcValidator;
-    let scope:nock.Scope;
 
     before(function () {
       nock.cleanAll();
@@ -102,8 +102,8 @@ describe("OidcValidator", () => {
           .get('/.well-known/openid-configuration/jwks')
           .reply(200, "{}"); // Valid JSON, invalid content
 
-        const token = 'fakeValidToken'
-        const result = await oidcValidator.verify(token)
+        const token = 'fakeValidToken';
+        const result = await oidcValidator.verify(token);
         expect(result.errorMessage).to.equal("Something went wrong. We are not able to find any x509 certificate from the response.");
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
       })
@@ -117,8 +117,8 @@ describe("OidcValidator", () => {
           .get('/.well-known/openid-configuration/jwks')
           .reply(200, "{a: 'abc'}"); // Invalid JSON
 
-        const token = 'fakeValidToken'
-        const result = await oidcValidator.verify(token)
+        const token = 'fakeValidToken';
+        const result = await oidcValidator.verify(token);
         expect(result.errorMessage).to.match(/^Something went wrong while parsing the JSON from the JWK: .*/);
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
       })
@@ -132,10 +132,29 @@ describe("OidcValidator", () => {
           .get('/.well-known/openid-configuration/jwks')
           .reply(404);
 
-        const token = 'fakeValidToken'
-        const result = await oidcValidator.verify(token)
+        const token = 'fakeValidToken';
+        const result = await oidcValidator.verify(token);
         expect(result.errorMessage).to.equal("Something went wrong in order to get the JWK x509 Certificate.");
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
+      });
+    })
+
+    context("Invalid token", () => {
+      it("Should return a status of Unauthorized", async () => {
+        // Prepare
+        scope
+          .get('/.well-known/openid-configuration')
+          .reply(200, fakeWellKnown)
+          .get('/.well-known/openid-configuration/jwks')
+          .reply(200, fakeJwks);
+
+        const token = 'fakeValidToken'; // Invalid token
+
+        // Execute
+        const result = await oidcValidator.verify(token);
+
+        // Validate
+        expect(result.statusCode).to.equal(VerifyStatusCode.Unauthorized);
       });
     })
   })
