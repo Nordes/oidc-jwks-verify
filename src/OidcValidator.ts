@@ -13,25 +13,7 @@ import { VerifyOptions, VerifyStatusCode } from "./Model";
 // tslint:disable-next-line:no-var-requires
 const x509 = require("x509");
 
-const OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
-
-/**
- * Validate the JWT token.
- * @param token The JWT token
- * @param publicKey Public key used to certify the token
- */
-const jwtVerify = async (token: string, publicKey: NodeRSA.Key): Promise<VerifyStatusCode> => {
-  return new Promise<VerifyStatusCode>((resolve, reject) => {
-    // format: 'PKCS8', <== the format does not exists
-    jwt.verify(token, publicKey.toString(), { algorithms: ["RS256"] }, (errVerify: any) => {
-      if (errVerify) {
-        return resolve(VerifyStatusCode.Unauthorized);
-      }
-
-      return resolve(VerifyStatusCode.Authorized);
-    });
-  });
-};
+const OidcDiscoveryPath = "/.well-known/openid-configuration";
 
 /**
  * Class used to validate the OIDC JWT Token.
@@ -55,7 +37,7 @@ export class OidcValidator {
     if (!options.issuer.match(/^http:\/\/|^https:\/\/|^:\/\//)) { // Not sure for the "://"
       throw new Error("Missing URI prefix within the 'issuer'.");
     }
-    this.oidcDiscoveryUri = urlJoin(options.issuer, OIDC_DISCOVERY_PATH);
+    this.oidcDiscoveryUri = urlJoin(options.issuer, OidcDiscoveryPath);
   }
 
   /**
@@ -83,7 +65,7 @@ export class OidcValidator {
             throw new Error(`Not able to verify, error: ${err}`);
           }
 
-          return jwtVerify(token, thatPublicKey);
+          return this.jwtVerify(token, thatPublicKey);
         }));
 
       this.publicKey = thatPublicKey;
@@ -91,8 +73,26 @@ export class OidcValidator {
       return result;
     } else {
       // No pfx validation
-      return jwtVerify(token, this.publicKey);
+      return this.jwtVerify(token, this.publicKey);
     }
+  }
+
+  /**
+   * Validate the JWT token.
+   * @param token The JWT token
+   * @param publicKey Public key used to certify the token
+   */
+  private async jwtVerify(token: string, publicKey: NodeRSA.Key): Promise<VerifyStatusCode> {
+    return new Promise<VerifyStatusCode>((resolve, reject) => {
+      // format: 'PKCS8', <== the format does not exists
+      jwt.verify(token, publicKey.toString(), { algorithms: ["RS256"] }, (errVerify: any) => {
+        if (errVerify) {
+          return resolve(VerifyStatusCode.Unauthorized);
+        }
+
+        return resolve(VerifyStatusCode.Authorized);
+      });
+    });
   }
 
   /**
@@ -172,7 +172,7 @@ export class OidcValidator {
 
       that.publicKey = key.exportKey("public");
 
-      resolve(jwtVerify(token, that.publicKey));
+      resolve(this.jwtVerify(token, that.publicKey));
     });
   }
 }
