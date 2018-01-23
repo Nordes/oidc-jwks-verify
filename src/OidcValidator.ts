@@ -3,13 +3,15 @@
 // I couldn't use the express implementation within a WebSocket and I've decided to do a more generic implementation
 // using the promises.
 // ===============================================
+import { disconnect } from "cluster";
 import fs = require("fs");
 import jwt = require("jsonwebtoken");
 import NodeRSA = require("node-rsa");
 import * as path from "path";
 import request = require("request");
 import urlJoin = require("url-join");
-import { VerifyOptions, VerifyStatusCode } from "./Model";
+import { ValidatorResult, VerifyOptions, VerifyStatusCode } from "./Model";
+import { OidcValidatorErrorMessage } from "./OidcValidatorErrorMessage";
 // tslint:disable-next-line:no-var-requires
 const x509 = require("x509");
 
@@ -28,15 +30,17 @@ export class OidcValidator {
    */
   constructor(options: VerifyOptions) {
     if (!options) {
-      throw new Error("Options are missing.");
+      throw new Error(OidcValidatorErrorMessage.OptionsMissing);
     }
 
     if (!options.issuer) {
-      throw new Error("Issuer option is missing.");
+      throw new Error(OidcValidatorErrorMessage.IssuerMissing);
     }
+
     if (!options.issuer.match(/^http:\/\/|^https:\/\/|^:\/\//)) { // Not sure for the "://"
-      throw new Error("Missing URI prefix within the 'issuer'.");
+      throw new Error(OidcValidatorErrorMessage.IssuerPrefixInvalid);
     }
+
     this.oidcDiscoveryUri = urlJoin(options.issuer, OidcDiscoveryPath);
   }
 
@@ -51,18 +55,17 @@ export class OidcValidator {
    * Verify the JWT against the OID issuer.
    * @param token JWT Token coming from an Idenitty Server
    */
-  public async verify(token: string): Promise<VerifyStatusCode> {
+  public async verify(token: string): Promise<ValidatorResult> {
     if (!this.publicKey) {
 
       // tslint:disable-next-line:prefer-const
       let thatPublicKey: NodeRSA.Key = this.publicKey;
       const result = await (this.FetchDiscoveryJwkUris()
         .then((jwksUri: string) => this.FetchJwkFirstX5C(jwksUri))
-        .then((x5c: any) => this.SaveCertificate(x5c, token))
+        .then((x5c: any) => this.SaveCertificateAndCheck(x5c, token))
         .catch(async (err: any): Promise<any> => {
           if (err) {
-            // tslint:disable-next-line:no-console
-            throw new Error(`Not able to verify, error: ${err}`);
+            return new ValidatorResult(VerifyStatusCode.Error, err);
           }
 
           return this.jwtVerify(token, thatPublicKey);
@@ -82,15 +85,15 @@ export class OidcValidator {
    * @param token The JWT token
    * @param publicKey Public key used to certify the token
    */
-  private async jwtVerify(token: string, publicKey: NodeRSA.Key): Promise<VerifyStatusCode> {
-    return new Promise<VerifyStatusCode>((resolve, reject) => {
+  private async jwtVerify(token: string, publicKey: NodeRSA.Key): Promise<ValidatorResult> {
+    return new Promise<ValidatorResult>((resolve, reject) => {
       // format: 'PKCS8', <== the format does not exists
       jwt.verify(token, publicKey.toString(), { algorithms: ["RS256"] }, (errVerify: any) => {
         if (errVerify) {
-          return resolve(VerifyStatusCode.Unauthorized);
+          return resolve(new ValidatorResult(VerifyStatusCode.Unauthorized));
         }
 
-        return resolve(VerifyStatusCode.Authorized);
+        return resolve(new ValidatorResult(VerifyStatusCode.Authorized));
       });
     });
   }
@@ -126,6 +129,7 @@ export class OidcValidator {
           return reject(err);
         }
 
+        // Could add a check for body // json // jwks_uri
         return resolve(JSON.parse(discoveryResponse.body).jwks_uri);
       });
     });
@@ -137,13 +141,27 @@ export class OidcValidator {
    */
   private FetchJwkFirstX5C(jwksUri: string) {
     return new Promise<any>((resolve, reject) => {
-      request.get(jwksUri, (err: any, jwksResponse: any) => {
-        if (err) {
-          return reject(err);
+      request.get(jwksUri, (error: any, jwksResponse: request.RequestResponse, body: any) => {
+        if (error) {
+          return reject(error);
+        } else if (!jwksResponse || jwksResponse.statusCode !== 200) {
+          // throw new Error("Something went wrong in order to get the JWK x509 Certificate.");
+          return reject("Something went wrong in order to get the JWK x509 Certificate.");
         }
+        try {
+          const bodyObj = JSON.parse(body);
 
-        return resolve(JSON.parse(jwksResponse.body).keys[0].x5c[0]);
-      });
+          if (!bodyObj || !bodyObj.keys
+              || bodyObj.keys.length === 0
+              || !body.keys[0].x5c || body.keys[0].x5c.length === 0) {
+            return reject("Something went wrong. We are not able to find any x509 certificate from the response.");
+          }
+
+          return resolve(body.keys[0].x5c[0]); // Todo: We should instead return a list of x5c
+        } catch (error) {
+          return reject("Something went wrong while parsing the JSON from the JWK: " + error);
+        }
+     });
     });
   }
 
@@ -152,10 +170,10 @@ export class OidcValidator {
    * @param x5c Certificate
    * @param token OIDC Token
    */
-  private SaveCertificate(x5c: string, token: string): Promise<VerifyStatusCode> {
+  private SaveCertificateAndCheck(x5c: string, token: string): Promise<ValidatorResult> {
     const that = this;
 
-    return new Promise<VerifyStatusCode>((resolve, reject) => {
+    return new Promise<ValidatorResult>((resolve, reject) => {
       const x5cFormatted: string = that.formatCertificate(x5c);
       const certFilename: string = path.join(__dirname, "tmp.crt");
 

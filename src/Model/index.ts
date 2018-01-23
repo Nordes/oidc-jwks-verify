@@ -1,4 +1,5 @@
-import { VerifyOptions } from './VerifyOptions'
-import { VerifyStatusCode } from './VerifyStatusCode'
+import { ValidatorResult } from "./ValidatorResult";
+import { VerifyOptions } from "./VerifyOptions";
+import { VerifyStatusCode } from "./VerifyStatusCode";
 
-export { VerifyOptions, VerifyStatusCode }
+export { VerifyOptions, VerifyStatusCode, ValidatorResult };

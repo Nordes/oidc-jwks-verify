@@ -1,5 +1,5 @@
 export enum VerifyStatusCode {
-  Unauthorized = 'Unauthorized',
-  Authorized = 'Authorized',
-  Unknown = 'Unknown'
+  Unauthorized = "Unauthorized",
+  Authorized = "Authorized",
+  Error = "Error",
 }
