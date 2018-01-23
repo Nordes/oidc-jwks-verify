@@ -5,8 +5,8 @@
   "main": "dist/OidcValidator.js",
   "scripts": {
     "compile": "tsc -watch -p ./",
-    "tslint": "tslint -c tslint.json src/extension.ts",
-    "test": "./node_modules/.bin/mocha --compilers ts:ts-node/register ./test/*.spec.ts"
+    "tslint": "tslint -c tslint.json src/OidcValidator.ts",
+    "test": "./node_modules/.bin/mocha --require ts-node/register ./test/*.spec.ts"
   },
   "keywords": [
     "OIDC",
