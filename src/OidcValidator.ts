@@ -52,7 +52,9 @@ export class OidcValidator {
     if (!options.issuer) {
       throw new Error("Issuer option is missing.");
     }
-
+    if (!options.issuer.match(/^http:\/\/|^https:\/\/|^:\/\//)) { // Not sure for the "://"
+      throw new Error("Missing URI prefix within the 'issuer'.");
+    }
     this.oidcDiscoveryUri = urlJoin(options.issuer, OIDC_DISCOVERY_PATH);
   }
 
