@@ -10,12 +10,14 @@ npm install oidc-jwks-verify
 
 ## Usage
 ```js
-var verifier = require 'oidc-jwks-verify';
-
-var oidcValidator = new verifier({ issuer: 'http://my-identity-server/.well-known/...' }); // to be completed
+import { VerifyOidc, VerifyStatusCode } from 'oidc-jwks-verify'
+let oidcValidator = new VerifyOidc({ issuer: `http://localhost:5000` })
 
 // Somewhere in your code
-oidcValidator.verify(myToken)
+oidcValidator.verify(token).then((result: VerifyStatusCode) => {
+  // Result returns [Authorized|Unauthorized|Unknown] (Unknown should never happen)
+  console.log(result)
+})
 ```
 
 # License
