@@ -104,7 +104,7 @@ describe("OidcValidator", () => {
 
         const token = 'fakeValidToken';
         const result = await oidcValidator.verify(token);
-        expect(result.errorMessage).to.equal("Something went wrong. We are not able to find any x509 certificate from the response.");
+        expect(result.errorMessage).to.equal(OidcValidatorErrorMessage.OidJwkKeyNotFound);
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
       })
     })
@@ -119,7 +119,7 @@ describe("OidcValidator", () => {
 
         const token = 'fakeValidToken';
         const result = await oidcValidator.verify(token);
-        expect(result.errorMessage).to.match(/^Something went wrong while parsing the JSON from the JWK: .*/);
+        expect(result.errorMessage).to.match(/^Something went wrong while parsing the JSON from the JWK: .*/); // OidJSONError
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
       })
     })
@@ -134,7 +134,7 @@ describe("OidcValidator", () => {
 
         const token = 'fakeValidToken';
         const result = await oidcValidator.verify(token);
-        expect(result.errorMessage).to.equal("Something went wrong in order to get the JWK x509 Certificate.");
+        expect(result.errorMessage).to.equal(OidcValidatorErrorMessage.OidJwkUnexpectedData);
         expect(result.statusCode).to.equal(VerifyStatusCode.Error);
       });
     })

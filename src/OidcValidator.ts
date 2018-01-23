@@ -144,8 +144,7 @@ export class OidcValidator {
         if (error) {
           return reject(error);
         } else if (!jwksResponse || jwksResponse.statusCode !== 200) {
-          // TODO export the string in the enum
-          return reject("Something went wrong in order to get the JWK x509 Certificate.");
+          return reject(OidcValidatorErrorMessage.OidJwkUnexpectedData);
         }
         try {
           const bodyObj = JSON.parse(body);
@@ -153,14 +152,14 @@ export class OidcValidator {
           if (!bodyObj || !bodyObj.keys
               || bodyObj.keys.length === 0) {
             // No key set on the server will generate the case of x5c not existing. Should we continue in the flow?
-            return reject("Something went wrong. We are not able to find any x509 certificate from the response.");
+            return reject(OidcValidatorErrorMessage.OidJwkKeyNotFound);
           } else if (!bodyObj.keys[0].x5c || bodyObj.keys[0].x5c.length === 0) {
             return resolve(undefined);
           }
 
           return resolve(body.keys[0].x5c[0]); // Todo: We should instead return a list of x5c
         } catch (error) {
-          return reject("Something went wrong while parsing the JSON from the JWK: " + error);
+          return reject(OidcValidatorErrorMessage.OidJSONError + error);
         }
      });
     });
