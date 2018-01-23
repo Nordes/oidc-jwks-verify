@@ -15,6 +15,11 @@ const x509 = require("x509");
 
 const OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
 
+/**
+ * Validate the JWT token.
+ * @param token The JWT token
+ * @param publicKey Public key used to certify the token
+ */
 const jwtVerify = async (token: string, publicKey: NodeRSA.Key): Promise<VerifyStatusCode> => {
   return new Promise<VerifyStatusCode>((resolve, reject) => {
     // format: 'PKCS8', <== the format does not exists
@@ -28,10 +33,17 @@ const jwtVerify = async (token: string, publicKey: NodeRSA.Key): Promise<VerifyS
   });
 };
 
+/**
+ * Class used to validate the OIDC JWT Token.
+ */
 export class OidcValidator {
   private oidcDiscoveryUri: string;
   private publicKey: NodeRSA.Key;
 
+  /**
+   * Create an instance of the OIDC Validator
+   * @param options Verify options containing the 'Issuer'
+   */
   constructor(options: VerifyOptions) {
     if (!options) {
       throw new Error("Options are missing.");
@@ -44,10 +56,17 @@ export class OidcValidator {
     this.oidcDiscoveryUri = urlJoin(options.issuer, OIDC_DISCOVERY_PATH);
   }
 
+  /**
+   * OidcDiscovery URI
+   */
   get OidcDiscoveryUri(): string {
     return this.oidcDiscoveryUri;
   }
 
+  /**
+   * Verify the JWT against the OID issuer.
+   * @param token JWT Token coming from an Idenitty Server
+   */
   public async verify(token: string): Promise<VerifyStatusCode> {
     if (!this.publicKey) {
 
@@ -74,7 +93,11 @@ export class OidcValidator {
     }
   }
 
-  private formatCertificate(cert: string) {
+  /**
+   * Format the certificate
+   * @param cert Certificate (public key)
+   */
+  private formatCertificate(cert: string): string {
     cert = cert.replace(/\n|-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----/mig, "");
     let result: string = "";
 
@@ -91,6 +114,9 @@ export class OidcValidator {
     return `-----BEGIN CERTIFICATE-----\n${result}\n-----END CERTIFICATE-----\n`;
   }
 
+  /**
+   * Fetch the discoery Jwk URI(s)
+   */
   private FetchDiscoveryJwkUris() {
     return new Promise<string>((resolve, reject) => {
       request.get(this.oidcDiscoveryUri, (err: any, discoveryResponse: any) => {
@@ -103,6 +129,10 @@ export class OidcValidator {
     });
   }
 
+  /**
+   * Fetch the JWK first X509 Certificate
+   * @param jwksUri Uri where to get the certificates
+   */
   private FetchJwkFirstX5C(jwksUri: string) {
     return new Promise<any>((resolve, reject) => {
       request.get(jwksUri, (err: any, jwksResponse: any) => {
@@ -120,12 +150,12 @@ export class OidcValidator {
    * @param x5c Certificate
    * @param token OIDC Token
    */
-  private SaveCertificate(x5c: any, token: string) {
+  private SaveCertificate(x5c: string, token: string): Promise<VerifyStatusCode> {
     const that = this;
 
     return new Promise<VerifyStatusCode>((resolve, reject) => {
-      const x5cFormatted = that.formatCertificate(x5c);
-      const certFilename = path.join(__dirname, "tmp.crt");
+      const x5cFormatted: string = that.formatCertificate(x5c);
+      const certFilename: string = path.join(__dirname, "tmp.crt");
 
       fs.writeFileSync(certFilename, x5cFormatted, { encoding: "UTF-8" });
 
