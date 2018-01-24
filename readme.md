@@ -1,5 +1,6 @@
 # oidc-jwks-verify
-![](https://api.travis-ci.org/Nordes/oidc-jwks-verify.svg?branch=master)
+![](https://api.travis-ci.org/Nordes/oidc-jwks-verify.svg?branch=master) 
+[![Coverage Status](https://coveralls.io/repos/github/Nordes/oidc-jwks-verify/badge.svg?branch=master)](https://coveralls.io/github/Nordes/oidc-jwks-verify?branch=master) [![npm version](https://badge.fury.io/js/oidc-jwks-verify.svg)](https://badge.fury.io/js/oidc-jwks-verify)
 
 Code inspired from [express-oidc-jwks-verify](https://github.com/Nordes/oidc-jwks-verify). The reason why this project exists was for my project that needed to connect and validate the JWT token without using the express library.
 
