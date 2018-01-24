@@ -1,16 +1,14 @@
 {
   "name": "oidc-jwks-verify",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Allow the verification of the JWT token against an Identity Server from NodeJs",
   "main": "dist/OidcValidator.js",
-  "scripts": {
-    "ts-compile": "tsc -p ./",
-    "ts-watch": "tsc -watch -p ./",
-    "tslint": "tslint -c tslint.json src/OidcValidator.ts",
-    "test": "./node_modules/.bin/mocha --require ts-node/register ./test/*.spec.ts",
-    "sample-client": "",
-    "sample-express": "",
-    "dev-sample": "npm run ts-compile && concurrently --kill-others \"npm run sample-client\" \"npm run sample-express\""
+  "author": "Nordes Menard-Lamarre (http://nordes.github.io)",
+  "license": "MIT",
+  "types": "./src/OidcValidator.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nordes/oidc-jwks-verify.git"
   },
   "keywords": [
     "OIDC",
@@ -18,8 +16,16 @@
     "IdentityServer",
     "IdentityServer4"
   ],
-  "author": "Nordes Menard-Lamarre",
-  "license": "MIT",
+  "scripts": {
+    "ts-compile": "tsc -p ./",
+    "ts-watch": "tsc -watch -p ./",
+    "ts-typings": "tsc --declaration ./src/OidcValidator.ts",
+    "tslint": "tslint -c tslint.json src/OidcValidator.ts",
+    "test": "./node_modules/.bin/mocha --require ts-node/register ./test/*.spec.ts",
+    "sample-client": "",
+    "sample-express": "",
+    "dev-sample": "npm run ts-compile && concurrently --kill-others \"npm run sample-client\" \"npm run sample-express\""
+  },
   "devDependencies": {
     "@types/chai": "^4.1.1",
     "@types/jsonwebtoken": "^7.2.5",
