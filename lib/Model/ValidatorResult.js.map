@@ -1,0 +1,1 @@
+{"version":3,"file":"ValidatorResult.js","sourceRoot":"C:/GitRepo/github/oidc-jwks-verify/src/","sources":["Model/ValidatorResult.ts"],"names":[],"mappings":";;AAEA;IAIE,YAAY,MAAwB,EAAE,YAAqB;QACzD,IAAI,CAAC,UAAU,GAAG,MAAM,CAAC;QACzB,IAAI,CAAC,YAAY,GAAG,YAAY,CAAC;IACnC,CAAC;CACF;AARD,0CAQC"}

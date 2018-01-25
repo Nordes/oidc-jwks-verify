@@ -7,7 +7,7 @@
 			"es6"
     ],
     "sourceMap": true,                     /* Generates corresponding '.map' file. */
-    "outDir": "dist",                        /* Redirect output structure to the directory. */
+    "outDir": "lib",                        /* Redirect output structure to the directory. */
     /* Strict Type-Checking Options */
     "strict": true,                            /* Enable all strict type-checking options. */
     "declaration": true,
@@ -17,6 +17,6 @@
   "exclude": [
     "node_modules",
     "test",
-    "dist"
+    "lib"
 	]
 }
