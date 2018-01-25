@@ -29,12 +29,23 @@ oidcValidator.verify(accessToken).then((result: VerifyStatusCode) => {
 ```
 
 ## When building locally
+```bash
+npm install
+npm run ts-compile
+```
+
 ### Build Dependencies
 Package: __x509__
 - node-gyp (python... https://github.com/nodejs/node-gyp if not already installed)
 - msbuild 14 (vs 2015?... https://www.microsoft.com/en-us/download/confirmation.aspx?id=48159 if not already installed)
 - openSSL (Otherwise an error... `LINK : fatal error LNK1181: cannot open input file 'C:\OpenSSL-Win64\lib\libeay32.lib' [C:\...\oidc-jwks-verify\node_modules\x509\build\x509.vcxproj]
 gyp ERR! build error` available at https://slproweb.com/products/Win32OpenSSL.html and https://github.com/ethereumjs/ethereumjs-util/issues/43 (see for the libeay32.lib link at the end))
+
+## Running tests?
+```bash
+npm run test
+```
+> Some tests might fail since you need to update the token to be validated. The default max-age for the token is 30 minutes. If you want to create a new token, please create a certificate (pfx) add it to your identity server and then get the well known data and update the mock. I can't fake the x509 validation process. I would say, that at this moment I don't know how to mock it.
 
 # License
 MIT (Enjoy)

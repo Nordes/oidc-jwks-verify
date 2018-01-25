@@ -17,7 +17,8 @@
     "IdentityServer4"
   ],
   "scripts": {
-    "ts-compile": "tsc -p ./",
+    "build": "tsc -p ./",
+    "ts-compile": "npm run build",
     "ts-watch": "tsc -watch -p ./",
     "ts-typings": "tsc --declaration ./src/OidcValidator.ts",
     "tslint": "tslint -c tslint.json src/OidcValidator.ts",
