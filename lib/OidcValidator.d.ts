@@ -4,7 +4,9 @@ import { ValidatorResult, VerifyOptions } from "./Model/index";
  */
 export declare class OidcValidator {
     private oidcDiscoveryUri;
-    private publicKey;
+    private publicKey?;
+    private hitCount;
+    private hitBeforeRefresh?;
     /**
      * Create an instance of the OIDC Validator
      * @param options Verify options containing the 'Issuer'
@@ -16,15 +18,15 @@ export declare class OidcValidator {
     readonly OidcDiscoveryUri: string;
     /**
      * Verify the JWT against the OID issuer.
-     * @param token JWT Token coming from an Idenitty Server
+     * @param accessToken JWT Token coming from an Idenitty Server
      */
-    verify(token: string): Promise<ValidatorResult>;
+    verify(accessToken: string): Promise<ValidatorResult>;
     /**
      * Validate the JWT token.
      * @param token The JWT token
      * @param publicKey Public key used to certify the token
      */
-    private jwtVerify(token, publicKey);
+    private jwtVerify(token, publicKey?);
     /**
      * Format the certificate
      * @param cert Certificate (public key)

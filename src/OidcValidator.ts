@@ -85,7 +85,7 @@ export class OidcValidator {
    * @param token The JWT token
    * @param publicKey Public key used to certify the token
    */
-  private async jwtVerify(token: string, publicKey: NodeRSA.Key): Promise<ValidatorResult> {
+  private async jwtVerify(token: string, publicKey?: NodeRSA.Key): Promise<ValidatorResult> {
     return new Promise<ValidatorResult>((resolve, reject) => {
       // format: 'PKCS8', <== the format does not exists
       jwt.verify(token, publicKey ? publicKey.toString() : "", { algorithms: ["RS256"] }, (errVerify: any) => {
@@ -175,7 +175,7 @@ export class OidcValidator {
     const that = this;
 
     if (!x5c) {
-      return this.jwtVerify(token, that.publicKey);
+      return this.jwtVerify(token, this.publicKey);
     }
 
     return new Promise<ValidatorResult>((resolve, reject) => {
