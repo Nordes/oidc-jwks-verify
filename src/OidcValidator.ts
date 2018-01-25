@@ -7,14 +7,14 @@ import { disconnect } from "cluster";
 import fs = require("fs");
 import jwt = require("jsonwebtoken");
 import NodeRSA = require("node-rsa");
-import * as path from "path";
+import path = require("path");
 import request = require("request");
 import urlJoin = require("url-join"); // Should be removed. IMO, it's not worth havig that dependency
 import { ValidatorResult, VerifyOptions, VerifyStatusCode } from "./Model/index";
 import { OidcValidatorErrorMessage } from "./OidcValidatorErrorMessage";
+
 // tslint:disable-next-line:no-var-requires
 const x509 = require("x509");
-
 const OidcDiscoveryPath = "/.well-known/openid-configuration";
 
 /**
@@ -22,7 +22,9 @@ const OidcDiscoveryPath = "/.well-known/openid-configuration";
  */
 export class OidcValidator {
   private oidcDiscoveryUri: string;
-  private publicKey: NodeRSA.Key;
+  private publicKey?: NodeRSA.Key;
+  private hitCount: number = 0;
+  private hitBeforeRefresh?: number = undefined;
 
   /**
    * Create an instance of the OIDC Validator
@@ -40,7 +42,7 @@ export class OidcValidator {
     if (!options.issuer.match(/^http:\/\/|^https:\/\/|^:\/\//)) { // Not sure for the "://"
       throw new Error(OidcValidatorErrorMessage.IssuerPrefixInvalid);
     }
-
+    this.hitBeforeRefresh = options.hitBeforeRefresh;
     this.oidcDiscoveryUri = urlJoin(options.issuer, OidcDiscoveryPath);
   }
 
@@ -53,16 +55,17 @@ export class OidcValidator {
 
   /**
    * Verify the JWT against the OID issuer.
-   * @param token JWT Token coming from an Idenitty Server
+   * @param accessToken JWT Token coming from an Idenitty Server
    */
-  public async verify(token: string): Promise<ValidatorResult> {
-    if (!this.publicKey) {
+  public async verify(accessToken: string): Promise<ValidatorResult> {
+    this.hitCount ++;
 
-      // tslint:disable-next-line:prefer-const
-      let thatPublicKey: NodeRSA.Key = this.publicKey;
+    if (!this.publicKey || (this.hitBeforeRefresh && this.hitCount >= this.hitBeforeRefresh)) {
+      this.hitCount = 0;
+
       const result = await (this.FetchDiscoveryJwkUris()
         .then((jwksUri: string) => this.FetchJwkFirstX5C(jwksUri))
-        .then((x5c: any) => this.SaveCertificateAndCheck(x5c, token))
+        .then((x5c: any) => this.SaveCertificateAndCheck(x5c, accessToken))
         .catch(async (err: any): Promise<any> => {
           // hack in order to force the check of the jwt when no x5c certificate. In fact it should be done differently.
           if (err) {
@@ -70,12 +73,10 @@ export class OidcValidator {
           }
          }));
 
-      this.publicKey = thatPublicKey;
-
       return result;
     } else {
       // No pfx validation
-      return this.jwtVerify(token, this.publicKey);
+      return this.jwtVerify(accessToken, this.publicKey);
     }
   }
 
@@ -88,7 +89,7 @@ export class OidcValidator {
     return new Promise<ValidatorResult>((resolve, reject) => {
       // format: 'PKCS8', <== the format does not exists
       jwt.verify(token, publicKey ? publicKey.toString() : "", { algorithms: ["RS256"] }, (errVerify: any) => {
-        if (errVerify) {
+        if (errVerify) { // Can also give an error like "TokenExpiredError"
           return resolve(new ValidatorResult(VerifyStatusCode.Unauthorized));
         }
 
@@ -149,15 +150,15 @@ export class OidcValidator {
         try {
           const bodyObj = JSON.parse(body);
 
-          if (!bodyObj || !bodyObj.keys
-              || bodyObj.keys.length === 0) {
+          if (!bodyObj || !bodyObj.keys || bodyObj.keys.length === 0) {
             // No key set on the server will generate the case of x5c not existing. Should we continue in the flow?
             return reject(OidcValidatorErrorMessage.OidJwkKeyNotFound);
           } else if (!bodyObj.keys[0].x5c || bodyObj.keys[0].x5c.length === 0) {
+            // No x509 certificate, we still do have a RSA data, but it's not what we're looking for.
             return resolve(undefined);
           }
 
-          return resolve(body.keys[0].x5c[0]); // Todo: We should instead return a list of x5c
+          return resolve(bodyObj.keys[0].x5c[0]); // Todo: We should instead return a list of x5c
         } catch (error) {
           return reject(OidcValidatorErrorMessage.OidJSONError + error);
         }
@@ -172,6 +173,7 @@ export class OidcValidator {
    */
   private SaveCertificateAndCheck(x5c: string, token: string): Promise<ValidatorResult> {
     const that = this;
+
     if (!x5c) {
       return this.jwtVerify(token, that.publicKey);
     }
@@ -180,9 +182,12 @@ export class OidcValidator {
       const x5cFormatted: string = that.formatCertificate(x5c);
       const certFilename: string = path.join(__dirname, "tmp.crt");
 
+      // Library x509 only read from a file, not from anything else.
+      // Here's how to do it, but we need a write access ¯\_(ツ)_/¯
       fs.writeFileSync(certFilename, x5cFormatted, { encoding: "UTF-8" });
+      const parsedKey = x509.parseCert(certFilename); // Propose to x509 package to add a parse(bufer) or string.
+      fs.unlinkSync(certFilename);
 
-      const parsedKey = x509.parseCert(certFilename);
       const key = new NodeRSA();
       const nodeRSAKey: any = {
         e: parseInt(parsedKey.publicKey.e, 10),

@@ -4,16 +4,19 @@ import { expect, should as shouldbe } from 'chai';
 import nock = require('nock');
 import fs = require('fs');
 import { VerifyStatusCode } from '../src/Model/index';
+import { Oidc, Profile } from './interface/oidc'
 
 const fakeWellKnown = fs.readFileSync(__dirname + `/mockRequest/wellKnown.json`, null);
+const fakeJwksNoX5C = fs.readFileSync(__dirname + `/mockRequest/jwksNoX5C.json`, null);
 const fakeJwks = fs.readFileSync(__dirname + `/mockRequest/jwks.json`, null);
+const oidcInfo: Oidc = JSON.parse(fs.readFileSync(__dirname + '/mockRequest/clientOidc.json', null).toString());
 let scope: nock.Scope;
 
 describe("OidcValidator", () => {
   describe("#constructor()", () => {
     context("Instantiate constructor with a valid [https] issuer", () => {
       it("Should not fail", () => {
-        let oidcValidator = new OidcValidator({ issuer: "https://openid.example.com" });
+        let oidcValidator = new OidcValidator({ issuer: "http://localhost:5000" });
         expect(oidcValidator).to.be.not.null;
       });
     })
@@ -41,15 +44,15 @@ describe("OidcValidator", () => {
 
     context("Get the Discovery URI with no trailing slash", () => {
       it("Should return the well known URI without any extra slashes", () => {
-        const oidcValidator = new OidcValidator({ issuer: "https://openid.example.com" });
-        expect(oidcValidator.OidcDiscoveryUri).to.equal("https://openid.example.com/.well-known/openid-configuration");
+        const oidcValidator = new OidcValidator({ issuer: "http://localhost:5000" });
+        expect(oidcValidator.OidcDiscoveryUri).to.equal("http://localhost:5000/.well-known/openid-configuration");
       });
     })
 
     context("Get the Discovery URI with a trailing slash", () => {
       it("Should return the well known URI without any extra slashes", () => {
-        const oidcValidator = new OidcValidator({ issuer: "https://openid.example.com/" });
-        expect(oidcValidator.OidcDiscoveryUri).to.equal("https://openid.example.com/.well-known/openid-configuration");
+        const oidcValidator = new OidcValidator({ issuer: "http://localhost:5000/" });
+        expect(oidcValidator.OidcDiscoveryUri).to.equal("http://localhost:5000/.well-known/openid-configuration");
       });
     })
 
@@ -82,8 +85,8 @@ describe("OidcValidator", () => {
 
     before(function () {
       nock.cleanAll();
-      scope = nock('https://openid.example.com', { allowUnmocked: false });
-      oidcValidator = new OidcValidator({ issuer: "https://openid.example.com" })
+      scope = nock('http://localhost:5000', { allowUnmocked: false });
+      oidcValidator = new OidcValidator({ issuer: "http://localhost:5000" })
     })
 
     context("Unable to contact the server [Not implemented]", () => {
@@ -156,6 +159,68 @@ describe("OidcValidator", () => {
         // Validate
         expect(result.statusCode).to.equal(VerifyStatusCode.Unauthorized);
       });
-    })
+    });
+
+    context("Valid token", () => {
+      it("Should return a status of Authorized", async () => {
+        nock.cleanAll();
+        // Prepare
+        scope
+          .get('/.well-known/openid-configuration')
+          .reply(200, fakeWellKnown)
+          .get('/.well-known/openid-configuration/jwks')
+          .reply(200, fakeJwks);
+
+        // Execute
+        const result = await oidcValidator.verify(oidcInfo.access_token);
+
+        // Validate
+        expect(result.statusCode).to.equal(VerifyStatusCode.Authorized);
+      });
+    });
+
+    context("Valid token (2 times should use cached value)", () => {
+      it("Should return a status of Authorized twice", async () => {
+        nock.cleanAll();
+        // Prepare
+        scope
+          .get('/.well-known/openid-configuration')
+          .reply(200, fakeWellKnown)
+          .get('/.well-known/openid-configuration/jwks')
+          .reply(200, fakeJwks);
+
+        // Execute
+        const result = await oidcValidator.verify(oidcInfo.access_token);
+        const result2 = await oidcValidator.verify(oidcInfo.access_token);
+
+        // Validate
+        expect(result.statusCode).to.equal(VerifyStatusCode.Authorized);
+        expect(result2.statusCode).to.equal(VerifyStatusCode.Authorized);
+      });
+    });
+
+    context("Valid token (2 times should without cache enabled)", () => {
+      it("Should return a status of Authorized twice and two access to the URL", async () => {
+        nock.cleanAll();
+        // Prepare
+        let oidcValidatorHitCounter: OidcValidator = new OidcValidator({ issuer: "http://localhost:5000", hitBeforeRefresh: 0});
+
+        scope
+          .get('/.well-known/openid-configuration')
+          .times(2)
+          .reply(200, fakeWellKnown)
+          .get('/.well-known/openid-configuration/jwks')
+          .times(2)
+          .reply(200, fakeJwks);
+
+        // Execute
+        const result = await oidcValidator.verify(oidcInfo.access_token);
+        const result2 = await oidcValidator.verify(oidcInfo.access_token);
+
+        // Validate
+        expect(result.statusCode).to.equal(VerifyStatusCode.Authorized);
+        expect(result2.statusCode).to.equal(VerifyStatusCode.Authorized);
+      });
+    });
   })
 });

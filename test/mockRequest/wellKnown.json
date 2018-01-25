@@ -1,13 +1,13 @@
 {
-  "issuer": "https://openid.example.com",
-  "jwks_uri": "https://openid.example.com/.well-known/openid-configuration/jwks",
-  "authorization_endpoint": "https://openid.example.com/connect/authorize",
-  "token_endpoint": "https://openid.example.com/connect/token",
-  "userinfo_endpoint": "https://openid.example.com/connect/userinfo",
-  "end_session_endpoint": "https://openid.example.com/connect/endsession",
-  "check_session_iframe": "https://openid.example.com/connect/checksession",
-  "revocation_endpoint": "https://openid.example.com/connect/revocation",
-  "introspection_endpoint": "https://openid.example.com/connect/introspect",
+  "issuer": "http://localhost:5000",
+  "jwks_uri": "http://localhost:5000/.well-known/openid-configuration/jwks",
+  "authorization_endpoint": "http://localhost:5000/connect/authorize",
+  "token_endpoint": "http://localhost:5000/connect/token",
+  "userinfo_endpoint": "http://localhost:5000/connect/userinfo",
+  "end_session_endpoint": "http://localhost:5000/connect/endsession",
+  "check_session_iframe": "http://localhost:5000/connect/checksession",
+  "revocation_endpoint": "http://localhost:5000/connect/revocation",
+  "introspection_endpoint": "http://localhost:5000/connect/introspect",
   "frontchannel_logout_supported": true,
   "frontchannel_logout_session_supported": true,
   "backchannel_logout_supported": true,
@@ -15,8 +15,7 @@
   "scopes_supported": [
     "openid",
     "profile",
-    "email",
-    "phone",
+    "api1",
     "offline_access"
   ],
   "claims_supported": [
@@ -34,11 +33,7 @@
     "birthdate",
     "zoneinfo",
     "locale",
-    "updated_at",
-    "email",
-    "email_verified",
-    "phone_number",
-    "phone_number_verified"
+    "updated_at"
   ],
   "grant_types_supported": [
     "authorization_code",

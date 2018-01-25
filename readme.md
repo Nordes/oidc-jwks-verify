@@ -1,8 +1,15 @@
 # oidc-jwks-verify
+> Note: Not stable enough! Yet! I home issue while running the test and validating the token.
+
 ![](https://api.travis-ci.org/Nordes/oidc-jwks-verify.svg?branch=master) 
 [![Coverage Status](https://coveralls.io/repos/github/Nordes/oidc-jwks-verify/badge.svg?branch=master)](https://coveralls.io/github/Nordes/oidc-jwks-verify?branch=master) [![npm version](https://badge.fury.io/js/oidc-jwks-verify.svg)](https://badge.fury.io/js/oidc-jwks-verify)
 
 Code inspired from [express-oidc-jwks-verify](https://github.com/Nordes/oidc-jwks-verify). The reason why this project exists was for my project that needed to connect and validate the JWT token without using the express library.
+
+# Scenario
+1. Server is having a Validation Key to validate the user tokens ([AddValidationKey](http://docs.identityserver.io/en/release/topics/startup.html#refstartupkeymaterial) in IdentityServer)
+2. The client want to validate the token against the server (basically a key check)
+3. We validate the id_token and then consider the user really authenticated
 
 ## Installation [Not yet deployed as a npm package]
 The installation is simple:

@@ -1,3 +1,4 @@
 export interface VerifyOptions {
-  issuer: string
+  issuer: string;
+  hitBeforeRefresh?: number;
 }
