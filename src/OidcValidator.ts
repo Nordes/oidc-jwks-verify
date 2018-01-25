@@ -10,7 +10,7 @@ import NodeRSA = require("node-rsa");
 import * as path from "path";
 import request = require("request");
 import urlJoin = require("url-join"); // Should be removed. IMO, it's not worth havig that dependency
-import { ValidatorResult, VerifyOptions, VerifyStatusCode } from "./Model";
+import { ValidatorResult, VerifyOptions, VerifyStatusCode } from "./Model/index";
 import { OidcValidatorErrorMessage } from "./OidcValidatorErrorMessage";
 // tslint:disable-next-line:no-var-requires
 const x509 = require("x509");

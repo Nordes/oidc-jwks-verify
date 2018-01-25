@@ -1,6 +1,6 @@
 {
   "name": "oidc-jwks-verify",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Allow the verification of the JWT token against an Identity Server from NodeJs",
   "main": "dist/OidcValidator.js",
   "author": "Nordes Menard-Lamarre (http://nordes.github.io)",
