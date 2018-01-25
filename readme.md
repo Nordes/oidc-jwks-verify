@@ -1,6 +1,4 @@
 # oidc-jwks-verify
-> Note: Not stable enough! Yet! I home issue while running the test and validating the token.
-
 ![](https://api.travis-ci.org/Nordes/oidc-jwks-verify.svg?branch=master) 
 [![Coverage Status](https://coveralls.io/repos/github/Nordes/oidc-jwks-verify/badge.svg?branch=master)](https://coveralls.io/github/Nordes/oidc-jwks-verify?branch=master) [![npm version](https://badge.fury.io/js/oidc-jwks-verify.svg)](https://badge.fury.io/js/oidc-jwks-verify)
 
@@ -24,7 +22,7 @@ import { VerifyOidc, VerifyStatusCode } from 'oidc-jwks-verify'
 let oidcValidator = new VerifyOidc({ issuer: `http://localhost:5000` })
 
 // Somewhere in your code
-oidcValidator.verify(token).then((result: VerifyStatusCode) => {
+oidcValidator.verify(accessToken).then((result: VerifyStatusCode) => {
   // Result returns [Authorized|Unauthorized|Unknown] (Unknown should never happen)
   console.log(result)
 })
