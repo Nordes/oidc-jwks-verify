@@ -17,8 +17,7 @@
     "IdentityServer4"
   ],
   "scripts": {
-    "build": "tsc -p ./",
-    "ts-compile": "npm run build",
+    "build": "rimraf lib && tsc -p ./",
     "ts-watch": "tsc -watch -p ./",
     "ts-typings": "tsc --declaration ./src/OidcValidator.ts",
     "tslint": "tslint -c tslint.json src/OidcValidator.ts",
@@ -58,6 +57,7 @@
     "nock": "^9.1.6",
     "node-gyp": "^3.6.2",
     "nyc": "^11.4.1",
+    "rimraf": "^2.6.2",
     "ts-node": "^4.1.0",
     "tslint": "^5.9.1",
     "tslint-config-airbnb": "^5.4.2",

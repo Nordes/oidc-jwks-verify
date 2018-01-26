@@ -30,8 +30,9 @@ oidcValidator.verify(accessToken).then((result: VerifyStatusCode) => {
 
 ## When building locally
 ```bash
-npm install
-npm run ts-compile
+$ npm install
+$ npm run build
+$ # Now a folder called lib will be available.
 ```
 
 ### Build Dependencies
