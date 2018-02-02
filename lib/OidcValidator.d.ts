@@ -1,4 +1,4 @@
-import { ValidatorResult, VerifyOptions } from "./Model/index";
+import { ValidatorResult, VerifyOptions } from "./models/index";
 /**
  * Class used to validate the OIDC JWT Token.
  */

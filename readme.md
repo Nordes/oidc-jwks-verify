@@ -48,5 +48,8 @@ npm run test
 ```
 > Some tests might fail since you need to update the token to be validated. The default max-age for the token is 30 minutes. If you want to create a new token, please create a certificate (pfx) add it to your identity server and then get the well known data and update the mock. I can't fake the x509 validation process. I would say, that at this moment I don't know how to mock it.
 
+# Side note
+While working on this OIDC validator, I found also an another interesting project called [Oidc](https://github.com/techops-peopledata/oidc). It might be worth for some people depending on their needs. The idea is similar.
+
 # License
 MIT (Enjoy)

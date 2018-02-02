@@ -1,4 +1,4 @@
-import { VerifyStatusCode } from "./VerifyStatusCode";
+import { VerifyStatusCode } from "./verifyStatusCode";
 
 export class ValidatorResult {
   public statusCode: VerifyStatusCode;

@@ -2,10 +2,10 @@
   "name": "oidc-jwks-verify",
   "version": "0.1.1",
   "description": "Allow the verification of the JWT token against an Identity Server from NodeJs",
-  "main": "lib/OidcValidator.js",
+  "main": "lib/index.js",
   "author": "Nordes Menard-Lamarre (http://nordes.github.io)",
   "license": "MIT",
-  "types": "./src/OidcValidator.d.ts",
+  "types": "./src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/Nordes/oidc-jwks-verify.git"
@@ -64,6 +64,7 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
+    "@types/socket.io": "^1.4.31",
     "jsonwebtoken": "^8.1.0",
     "node-rsa": "^0.4.2",
     "request": "^2.83.0",
