@@ -17,6 +17,7 @@ npm install oidc-jwks-verify
 ```
 
 ## Usage
+Example in typescript:
 ```js
 import { VerifyOidc, VerifyStatusCode } from 'oidc-jwks-verify'
 let oidcValidator = new VerifyOidc({ issuer: `http://localhost:5000` })
