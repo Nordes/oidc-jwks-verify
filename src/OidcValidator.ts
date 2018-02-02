@@ -123,7 +123,7 @@ export class OidcValidator {
    * Fetch the discoery Jwk URI(s)
    */
   private FetchDiscoveryJwkUris() {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>(((resolve: any, reject: any) => {
       request.get(this.oidcDiscoveryUri, (err: any, discoveryResponse: any) => {
         if (err) {
           return reject(err);
@@ -132,7 +132,7 @@ export class OidcValidator {
         // Could add a check for body // json // jwks_uri
         return resolve(JSON.parse(discoveryResponse.body).jwks_uri);
       });
-    });
+    }).bind(this));
   }
 
   /**
